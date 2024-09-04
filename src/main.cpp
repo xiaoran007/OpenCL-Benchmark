@@ -1,4 +1,5 @@
 #include "opencl.hpp" // includes "utilities.hpp"
+#include <set>
 
 string fraction(const float x) {
 	float values[]   = { 1.0f/64.0f, 1.0f/32.0f, 1.0f/24.0f, 1.0f/16.0f, 1.0f/12.0f, 1.0f/8.0f, 1.0f/4.0f, 1.0f/3.0f, 1.0f/2.0f, 2.0f/3.0f, 1.0f, 2.0f, 4.0f, 8.0f, 16.0f, 32.0f, 64.0f };
@@ -177,15 +178,43 @@ void benchmark_device(const Device_Info& device_info) {
 	println("|-----------------------------------------------------------------------------|");
 }
 
+std::vector<int> handle_user_input(int max_device_id) {
+	std::string input;
+    std::getline(std::cin, input);
+    std::vector<int> device_ids;
+	std::set<int> unique;
+	std::istringstream iss(input);
+	int number;
+	while (iss >> number) {
+		if (number < 0 || number > max_device_id) {
+			std::cerr << "  Invalid device ID: " << number << std::endl;
+            exit(1);
+		}
+		unique.insert(number);
+	}
+	device_ids.assign(unique.begin(), unique.end());
+	return device_ids;
+}
+
 int main(int argc, char* argv[]) {
 	vector<string> main_arguments = get_main_arguments(argc, argv);
 	println(".-----------------------------------------------------------------------------.");
 	const vector<Device_Info> devices = get_devices();
-	if((int)main_arguments.size()>0) {
-		for(uint i=0u; i<(uint)main_arguments.size(); i++) benchmark_device(select_device_with_id(to_int(main_arguments[i]), devices));
-	} else {
-		for(uint i=0u; i<(uint)devices.size(); i++) benchmark_device(devices[i]);
+	println(".-----------------------------------------------------------------------------.");
+	std::cout << "  Select device ID (use space to select multiple devices): ";
+	std::vector<int> selected_devices = handle_user_input(devices.size()-1);
+	if (selected_devices.empty()) {
+		std::cerr << "  No device selected." << std::endl;
+        exit(1);
 	}
+	for(uint i=0u; i<(uint)selected_devices.size(); i++) benchmark_device(devices[selected_devices[i]]);
+	// if((int)main_arguments.size()>0) {
+	// 	for(uint i=0u; i<(uint)main_arguments.size(); i++) benchmark_device(select_device_with_id(to_int(main_arguments[i]), devices));
+	// } else {
+	// 	for(uint i=0u; i<(uint)devices.size(); i++) benchmark_device(devices[i]);
+	// }
+	// for(uint i=0u; i<(uint)devices.size(); i++) print_device_info(devices[i]);
+	
 #ifdef _WIN32
 	println("|-----------------------------------------------------------------------------|");
 	println("| Done. Press Enter to exit.                                                  |");
