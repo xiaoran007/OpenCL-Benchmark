@@ -1,5 +1,6 @@
 #include "opencl.hpp" // includes "utilities.hpp"
 #include <set>
+#include <sstream>
 
 string fraction(const float x) {
 	float values[]   = { 1.0f/64.0f, 1.0f/32.0f, 1.0f/24.0f, 1.0f/16.0f, 1.0f/12.0f, 1.0f/8.0f, 1.0f/4.0f, 1.0f/3.0f, 1.0f/2.0f, 2.0f/3.0f, 1.0f, 2.0f, 4.0f, 8.0f, 16.0f, 32.0f, 64.0f };
