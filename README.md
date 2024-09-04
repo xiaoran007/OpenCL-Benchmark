@@ -48,6 +48,78 @@ Works with any GPU in Windows, Linux, macOS and Android.
 - call `bin\OpenCL-Benchmark.exe 0 2 5` (Windows) or `bin/OpenCL-Benchmark 0 2 5` (Linux/macOS) with the number(s) being the device IDs to be benchmarked
 
 
+## OpenCL dynamic library:
+### Windows
+#### AMD GPUs 
+https://www.amd.com/en/support/download/drivers.html
+
+#### Intel GPUs 
+https://www.intel.com/content/www/us/en/download/785597/intel-arc-iris-xe-graphics-windows.html
+
+#### Nvidia GPUs
+https://www.nvidia.com/Download/index.aspx
+
+#### AMD/Intel CPUs 
+https://www.intel.com/content/www/us/en/developer/articles/technical/intel-cpu-runtime-for-opencl-applications-with-sycl-support.html
+
+### Linux
+
+#### AMD GPU Drivers, which contain the OpenCL Runtime
+```shell
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y g++ git make ocl-icd-libopencl1 ocl-icd-opencl-dev
+mkdir -p ~/amdgpu
+wget -P ~/amdgpu https://repo.radeon.com/amdgpu-install/6.1.3/ubuntu/jammy/amdgpu-install_6.1.60103-1_all.deb
+sudo apt install -y ~/amdgpu/amdgpu-install*.deb
+sudo amdgpu-install -y --usecase=graphics,rocm,opencl --opencl=rocr
+sudo usermod -a -G render,video $(whoami)
+rm -r ~/amdgpu
+sudo shutdown -r now
+```
+
+#### Intel GPU Drivers are already installed, only the OpenCL Runtime is needed
+```shell
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y g++ git make ocl-icd-libopencl1 ocl-icd-opencl-dev intel-opencl-icd
+sudo usermod -a -G render $(whoami)
+sudo shutdown -r now
+```
+
+#### Nvidia GPU Drivers, which contain the OpenCL Runtime
+```shell
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y g++ git make ocl-icd-libopencl1 ocl-icd-opencl-dev nvidia-driver-550
+sudo shutdown -r now
+```
+
+#### CPU Option 1: Intel CPU Runtime for OpenCL (works for both AMD/Intel CPUs)
+```shell
+export OCLV="2024.18.6.0.02_rel"
+export TBBV="2021.13.0"
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y g++ git make ocl-icd-libopencl1 ocl-icd-opencl-dev
+sudo mkdir -p ~/cpurt /opt/intel/oclcpuexp_${OCLV} /etc/OpenCL/vendors /etc/ld.so.conf.d
+sudo wget -P ~/cpurt https://github.com/intel/llvm/releases/download/2024-WW25/oclcpuexp-${OCLV}.tar.gz
+sudo wget -P ~/cpurt https://github.com/oneapi-src/oneTBB/releases/download/v${TBBV}/oneapi-tbb-${TBBV}-lin.tgz
+sudo tar -zxvf ~/cpurt/oclcpuexp-${OCLV}.tar.gz -C /opt/intel/oclcpuexp_${OCLV}
+sudo tar -zxvf ~/cpurt/oneapi-tbb-${TBBV}-lin.tgz -C /opt/intel
+echo /opt/intel/oclcpuexp_${OCLV}/x64/libintelocl.so | sudo tee /etc/OpenCL/vendors/intel_expcpu.icd
+echo /opt/intel/oclcpuexp_${OCLV}/x64 | sudo tee /etc/ld.so.conf.d/libintelopenclexp.conf
+sudo ln -sf /opt/intel/oneapi-tbb-${TBBV}/lib/intel64/gcc4.8/libtbb.so /opt/intel/oclcpuexp_${OCLV}/x64
+sudo ln -sf /opt/intel/oneapi-tbb-${TBBV}/lib/intel64/gcc4.8/libtbbmalloc.so /opt/intel/oclcpuexp_${OCLV}/x64
+sudo ln -sf /opt/intel/oneapi-tbb-${TBBV}/lib/intel64/gcc4.8/libtbb.so.12 /opt/intel/oclcpuexp_${OCLV}/x64
+sudo ln -sf /opt/intel/oneapi-tbb-${TBBV}/lib/intel64/gcc4.8/libtbbmalloc.so.2 /opt/intel/oclcpuexp_${OCLV}/x64
+sudo ldconfig -f /etc/ld.so.conf.d/libintelopenclexp.conf
+sudo rm -r ~/cpurt
+```
+
+#### CPU Option 2: PoCL
+```shell
+sudo apt update && sudo apt upgrade -y
+sudo apt install -y g++ git make ocl-icd-libopencl1 ocl-icd-opencl-dev pocl-opencl-icd
+```
+
+
 
 ## Examples
 ```
