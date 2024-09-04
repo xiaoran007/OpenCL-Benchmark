@@ -189,6 +189,14 @@ std::vector<int> handle_user_input(int max_device_id) {
 	while (iss >> number) {
 		if (number < 0 || number > max_device_id) {
 			std::cerr << "  Invalid device ID: " << number << std::endl;
+#ifdef _WIN32
+			println("|-----------------------------------------------------------------------------|");
+			println("| Done. Press Enter to exit.                                                  |");
+			println("'-----------------------------------------------------------------------------'");
+			wait();
+#else // Linux
+			println("'-----------------------------------------------------------------------------'");
+#endif // Linux
             exit(1);
 		}
 		unique.insert(number);
@@ -206,7 +214,15 @@ int main(int argc, char* argv[]) {
 	std::vector<int> selected_devices = handle_user_input(devices.size()-1);
 	if (selected_devices.empty()) {
 		std::cerr << "  No device selected." << std::endl;
-        exit(1);
+#ifdef _WIN32
+		println("|-----------------------------------------------------------------------------|");
+		println("| Done. Press Enter to exit.                                                  |");
+		println("'-----------------------------------------------------------------------------'");
+		wait();
+#else // Linux
+		println("'-----------------------------------------------------------------------------'");
+#endif // Linux
+		exit(1);
 	}
 	for(uint i=0u; i<(uint)selected_devices.size(); i++) benchmark_device(devices[selected_devices[i]]);
 	// if((int)main_arguments.size()>0) {
