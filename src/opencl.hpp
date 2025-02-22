@@ -7,7 +7,7 @@
 // https://github.com/KhronosGroup/OpenCL-Headers
 // https://github.com/KhronosGroup/OpenCL-CLHPP
 #define CL_HPP_MINIMUM_OPENCL_VERSION 100
-#define CL_HPP_TARGET_OPENCL_VERSION 300
+#define CL_HPP_TARGET_OPENCL_VERSION 120
 #include <CL/opencl.hpp>
 #include "utilities.hpp"
 using cl::Event;
@@ -130,10 +130,12 @@ struct Device_Info {
 		const int vendor_id = (int)cl_device.getInfo<CL_DEVICE_VENDOR_ID>(); // AMD=0x1002, Intel=0x8086, Nvidia=0x10DE, Apple=0x1027F00
 		float cores_per_cu = 1.0f;
 		if(vendor_id==0x1002) { // AMD GPU/CPU
+			#ifndef __APPLE__
 			const bool amd_128_cores_per_dualcu = contains(to_lower(name), "gfx10"); // identify RDNA/RDNA2 GPUs where dual CUs are reported
 			const bool amd_256_cores_per_dualcu = contains(to_lower(name), "gfx11"); // identify RDNA3 GPUs where dual CUs are reported
 			cores_per_cu = is_gpu ? (amd_256_cores_per_dualcu ? 256.0f : amd_128_cores_per_dualcu ? 128.0f : 64.0f) : 0.5f; // 64 cores/CU (GCN, CDNA), 128 cores/dualCU (RDNA, RDNA2), 256 cores/dualCU (RDNA3), 1/2 core/CU (CPUs)
 			if(is_gpu) name = trim(cl_device.getInfo<CL_DEVICE_BOARD_NAME_AMD>()); // for AMD GPUs, CL_DEVICE_NAME wrongly outputs chip codename, and CL_DEVICE_BOARD_NAME_AMD outputs actual device name
+			#endif
 		} else if(vendor_id==0x8086) { // Intel GPU/CPU
 			const bool intel_16_cores_per_cu = contains_any(to_lower(name), {"gpu max", "140v", "130v", "b580", "b570"}); // identify PVC/Xe2 GPUs
 			cores_per_cu = is_gpu ? (intel_16_cores_per_cu ? 16.0f : 8.0f) : 0.5f; // Intel GPUs have 16 cores/CU (PVC) or 8 cores/CU (integrated/Arc), Intel CPUs (with HT) have 1/2 core/CU
@@ -146,6 +148,7 @@ struct Device_Info {
 			}
 			patch_intel_gpu_above_4gb = patch_intel_gpu_above_4gb||(is_gpu&&memory>4096u); // enable memory allocations greater than 4GB for Intel GPUs with >4GB VRAM
 		} else if(vendor_id==0x10DE||vendor_id==0x13B5) { // Nvidia GPU/CPU
+			#ifndef __APPLE__
 			nvidia_compute_capability = 10u*(uint)cl_device.getInfo<CL_DEVICE_COMPUTE_CAPABILITY_MAJOR_NV>()+(uint)cl_device.getInfo<CL_DEVICE_COMPUTE_CAPABILITY_MINOR_NV>();
 			const bool nvidia__32_cores_per_cu = (nvidia_compute_capability <30); // identify Fermi GPUs
 			const bool nvidia_192_cores_per_cu = (nvidia_compute_capability>=30&&nvidia_compute_capability< 50); // identify Kepler GPUs
@@ -153,6 +156,7 @@ struct Device_Info {
 			cores_per_cu = is_gpu ? (nvidia__32_cores_per_cu ? 32.0f : nvidia_192_cores_per_cu ? 192.0f : nvidia__64_cores_per_cu ? 64.0f : 128.0f) : 1.0f; // 32 (Fermi), 192 (Kepler), 64 (Volta, Turing, P100, A100, A30), 128 (Maxwell, Pascal, Ampere, Hopper, Ada, Blackwell) or 1 (CPUs)
 			patch_nvidia_fp16 = patch_nvidia_fp16||(nvidia_compute_capability>=60&&atof(driver_version.substr(0, 6).c_str())>=520.00); // enable for all Nvidia Pascal or newer GPUs with driver>=520.00
 			if(patch_nvidia_fp16) is_fp16_capable = 2u;
+			#endif
 		} else if(vendor_id==0x1027F00) { // Apple iGPU
 			cores_per_cu = 128.0f; // Apple ARM GPUs usually have 128 cores/CU
 		} else if(vendor_id==0x1022||vendor_id==0x10006||vendor_id==0x6C636F70) { // x86 CPUs with PoCL runtime
